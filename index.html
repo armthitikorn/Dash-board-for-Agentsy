@@ -25,13 +25,6 @@
     const TARGET_DEPT = 'Agentsy';
 
     // ---------- Auth (ผู้ดูแลล็อกอินผ่าน Supabase Auth) ----------
-    function setStatus(msg, isError) {
-      const el = document.getElementById('dataStatus');
-      if (!el) return;
-      el.textContent = msg;
-      el.style.color = isError ? '#b91c1c' : '#64748b';
-      el.style.background = isError ? '#fef2f2' : '#f8fafc';
-    }
     function isAllowedUser(user) {
       return !!user && user.app_metadata && user.app_metadata.department === TARGET_DEPT;
     }
@@ -146,7 +139,6 @@
           .filter(Boolean);
 
         if (emails.length === 0) {
-          setStatus('ไม่พบผู้ใช้แผนก ' + TARGET_DEPT + ' (ถ้าเพิ่งมีคนลงทะเบียน แต่ยังเป็น 0 ให้ตรวจสิทธิ์อ่านตาราง users / การล็อกอิน)', true);
           globalSubmissionsArray = [];
           renderSummaryStats([]); renderMatrixTable([]); renderChart([]);
           return;
@@ -154,8 +146,6 @@
 
         const quizResults = await fetchByEmails("quiz_results", emails);
         const subjectiveAnswers = await fetchByEmails("subjective_answers", emails);
-        setStatus('โหลดข้อมูลแล้ว: ผู้ใช้ ' + TARGET_DEPT + ' ' + emails.length + ' คน | ผลปรนัย ' + quizResults.length + ' แถว | อัตนัย ' + subjectiveAnswers.length + ' แถว', false);
-        console.log('[Agentsy dashboard]', { users: emails.length, quiz: quizResults.length, subjective: subjectiveAnswers.length });
 
         const userMap = {};
         (users || []).forEach(u => {
@@ -183,8 +173,6 @@
           return s;
         }
 
-        const unmatchedSets = new Set();
-
         // 1. ประมวลผลปรนัย
         (quizResults || []).forEach(r => {
           const createdDate = r.created_at ? r.created_at.split('T')[0] : '';
@@ -201,7 +189,7 @@
           if (keyword && !name.toLowerCase().includes(keyword) && !department.toLowerCase().includes(keyword)) return;
 
           const modKey = matchModuleKey(r.quiz_set);
-          if (!modKey) { unmatchedSets.add(r.quiz_set || '(ว่าง)'); return; }
+          if (!modKey) return;
 
           const sessionKey = r.session_id || `quiz-${r.id}`;
           const s = getOrCreateSession(sessionKey, name, department, experience, submissionTime);
@@ -212,10 +200,6 @@
             score: r.score, total: totalQ, pct, passed: pct >= 80, date: r.created_at
           };
         });
-
-        if (unmatchedSets.size > 0) {
-          setStatus('โหลดแล้ว แต่มีผลสอบที่ไม่ตรงกับ MODULE_LIST จึงไม่แสดง: ' + Array.from(unmatchedSets).join(' | '), true);
-        }
 
         // 2. ประมวลผลอัตนัย
         (subjectiveAnswers || []).forEach(r => {
@@ -252,7 +236,6 @@
 
       } catch (err) {
         console.error("Fetch Data Error:", err);
-        setStatus('โหลดข้อมูลไม่สำเร็จ: ' + (err.message || err), true);
       }
     }
 
@@ -882,8 +865,6 @@
       <button id="searchBtn">ค้นหาข้อมูล</button>
     </div>
 
-    <div id="dataStatus" style="text-align:center; font-size:0.85rem; margin:-8px 0 14px; padding:6px 10px; border-radius:6px; color:#64748b;">กำลังโหลดข้อมูล...</div>
-
     <div class="btn-group">
       <button id="logoutBtn" class="btn-danger">🚪 ออกจากระบบ</button>
       <button id="downloadExcelBtn" class="btn-secondary">📥 ดาวน์โหลด Excel สรุปข้อมูลทั้งหมด</button>
@@ -933,3 +914,4 @@
   </div>
 </body>
 </html>
+
