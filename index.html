@@ -130,7 +130,7 @@
 
       try {
         const { data: users, error: uErr } = await supabase
-          .from("users").select("*").in("department", ["Agency", "Agentsy"]);
+          .from("users_agent").select("*"); // ตารางของทีมเอเจน แยกจากทีมเทเล ไม่ต้องกรองแผนก
         if (uErr) throw uErr;
 
         const emails = (users || [])
@@ -143,8 +143,8 @@
           return;
         }
 
-        const quizResults = await fetchByEmails("quiz_results", emails);
-        const subjectiveAnswers = await fetchByEmails("subjective_answers", emails);
+        const quizResults = await fetchByEmails("quiz_results_agent", emails);
+        const subjectiveAnswers = await fetchByEmails("subjective_answers_agent", emails);
 
         const userMap = {};
         (users || []).forEach(u => {
