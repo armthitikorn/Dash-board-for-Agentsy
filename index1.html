@@ -30,12 +30,17 @@
         .btn-export { background: #10b981; color: white; padding: 12px 24px; border: none; border-radius: 8px; cursor: pointer; font-weight: 600; transition: background 0.2s; }
         .btn-export:hover { background: #059669; }
         audio { width: 100%; margin-top: 10px; }
+
+        /* ปุ่มย้อนกลับไปหน้าก่อนหน้า */
+        .btn-back { display: block; text-align: center; text-decoration: none; background: #e2e8f0; color: #1e293b; padding: 10px 14px; border-radius: 8px; font-weight: 600; margin-bottom: 15px; transition: background 0.2s; }
+        .btn-back:hover { background: #cbd5e1; }
     </style>
 </head>
 <body>
 
     <div class="sidebar">
         <div class="p-4">
+            <a href="index.html" class="btn-back">← กลับหน้าก่อนหน้า</a>
             <h2 style="margin:0 0 15px 0; color:var(--primary);">รายชื่อพนักงาน</h2>
             <input type="text" id="searchName" class="search-input" placeholder="ค้นหาชื่อพนักงาน..." oninput="filterList()">
             <input type="date" id="searchDate" class="search-input" onchange="filterList()">
@@ -166,6 +171,14 @@
         const sectionsContainer = document.getElementById('audioSections');
         sectionsContainer.innerHTML = '<div style="text-align:center; padding: 20px;">🔄 กำลังโหลดไฟล์เสียงทั้งหมด กรุณารอสักครู่...</div>';
 
+        // ดึงลิงก์เสียงจากตาราง submissions_agent (ไม่ต้องพึ่งสิทธิ์ list ของ Storage)
+        const { data: rows, error: rowsErr } = await supabase
+            .from('submissions_agent')
+            .select('part_number, question_number, question_text, audio_url, created_at')
+            .eq('user_id', emp.user_id)
+            .order('created_at', { ascending: true });
+        if (rowsErr) console.error('❌ โหลดข้อมูลเสียงไม่สำเร็จ:', rowsErr.message);
+
         let html = '';
         const steps = ['S1', 'S2', 'S3', 'S4', 'S5'];
         const stepNames = {
@@ -177,16 +190,16 @@
         };
 
         for (const s of steps) {
-            const { data: files } = await supabase.storage.from('responses').list(`agent/${emp.user_id}/${s}`);
-            const audioFiles = files?.filter(f => f.name.endsWith('.webm') || f.name.endsWith('.mp3')) || [];
+            const partNo = parseInt(s.slice(1), 10);
+            const audioFiles = (rows || []).filter(r => r.audio_url && Number(r.part_number) === partNo);
 
             let audioTags = '';
             if (audioFiles.length > 0) {
                 audioFiles.forEach((file, index) => {
-                    const { data: { publicUrl } } = supabase.storage.from('responses').getPublicUrl(`agent/${emp.user_id}/${s}/${file.name}`);
+                    const publicUrl = file.audio_url;
                     audioTags += `
                         <div style="margin-top: 10px; padding: 10px; background-color: #f8fafc; border-radius: 8px;">
-                            <small style="color:#64748b; font-weight: bold;">🔊 ไฟล์เสียงที่ ${index + 1}</small>
+                            <small style="color:#64748b; font-weight: bold;">🔊 ${file.question_text || ('ไฟล์เสียงที่ ' + (index + 1))}</small>
                             <audio controls src="${publicUrl}" style="width: 100%; margin-top: 5px; outline: none;"></audio>
                         </div>
                     `;
