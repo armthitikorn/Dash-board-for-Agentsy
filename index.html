@@ -89,7 +89,7 @@
     const MODULE_LIST = [
       { key: "Agent listening Objection", label: "Agent listening Objection" },
       { key: "Agent Objection script testing", label: "Agent Objection script testing" },
-      { key: "Insurance Knowledge", label: "Insurance Knowledge" },
+      { key: "Insurance Knowledge", label: "Insurance Knowledge", aliases: ["ความรู้เกี่ยวกับประกันชีวิต"] },
       { key: "ความกังวลของลูกค้า", label: "ความกังวลของลูกค้า" }
     ];
 
@@ -120,6 +120,7 @@
       if (!quizSetName) return null;
       for (const m of MODULE_LIST) {
         if (quizSetName.includes(m.key)) return m.key;
+        if (m.aliases && m.aliases.some(a => quizSetName.includes(a))) return m.key;
       }
       return null;
     }
