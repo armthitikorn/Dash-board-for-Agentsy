@@ -129,22 +129,13 @@
       const dateFilter = document.getElementById("dateInput").value.trim();
 
       try {
-        const { data: users, error: uErr } = await supabase
-          .from("users_agent").select("*"); // ตารางของทีมเอเจน แยกจากทีมเทเล ไม่ต้องกรองแผนก
-        if (uErr) throw uErr;
-
-        const emails = (users || [])
-          .map(u => (u.email || '').toLowerCase().trim())
-          .filter(Boolean);
-
-        if (emails.length === 0) {
-          globalSubmissionsArray = [];
-          renderSummaryStats([]); renderMatrixTable([]); renderChart([]);
-          return;
-        }
-
-        const quizResults = await fetchByEmails("quiz_results_agent", emails);
-        const subjectiveAnswers = await fetchByEmails("subjective_answers_agent", emails);
+        // ดึงข้อมูลแบบเดียวกับฝั่ง Tele (ไม่ต้องรอรายชื่อใน users ก่อน) แต่ใช้ตารางของเอเจน
+        const { data: users, error: uErr } = await supabase.from("users_agent").select("*");
+        if (uErr) console.warn("users_agent:", uErr.message);
+        const { data: quizResults, error: qErr } = await supabase.from("quiz_results_agent").select("*").order('created_at', { ascending: false });
+        if (qErr) throw qErr;
+        const { data: subjectiveAnswers, error: sErr } = await supabase.from("subjective_answers_agent").select("*").order('created_at', { ascending: false });
+        if (sErr) throw sErr;
 
         const userMap = {};
         (users || []).forEach(u => {
