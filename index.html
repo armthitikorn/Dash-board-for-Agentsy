@@ -130,7 +130,7 @@
 
       try {
         const { data: users, error: uErr } = await supabase
-          .from("users").select("*").eq("department", TARGET_DEPT);
+          .from("users").select("*").in("department", ["Agency", "Agentsy"]);
         if (uErr) throw uErr;
 
         const emails = (users || [])
